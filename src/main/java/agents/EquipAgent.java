@@ -2,9 +2,13 @@ package agents;
 
 import jade.core.AID;
 import jade.core.Agent;
+import jade.domain.DFService;
+import jade.domain.FIPAAgentManagement.DFAgentDescription;
+import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import configuration.JadeAgent;
+import lombok.SneakyThrows;
 import model.Equipment;
 import model.EquipmentAll;
 
@@ -15,9 +19,18 @@ import static java.lang.Thread.sleep;
 
 @JadeAgent(number = 2)
 public class EquipAgent extends Agent {
+    @SneakyThrows
     @Override
     protected void setup() {
         System.out.println("Hello! Equipment-agent " + getAID().getName() + " is ready.");
+
+        final DFAgentDescription dfAgentDescription = new DFAgentDescription();
+        final ServiceDescription serviceDescription = new ServiceDescription();
+
+        serviceDescription.setType(EquipAgent.class.getName());
+        dfAgentDescription.addServices(serviceDescription);
+
+        DFService.register(this, dfAgentDescription);
 
         MessageTemplate template = MessageTemplate.and(
                 MessageTemplate.MatchPerformative(ACLMessage.REQUEST

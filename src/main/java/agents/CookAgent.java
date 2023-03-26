@@ -3,7 +3,11 @@ package agents;
 import configuration.JadeAgent;
 import jade.core.AID;
 import jade.core.Agent;
+import jade.domain.DFService;
+import jade.domain.FIPAAgentManagement.DFAgentDescription;
+import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.lang.acl.ACLMessage;
+import lombok.SneakyThrows;
 import model.Cook;
 import model.CookersAll;
 
@@ -17,11 +21,21 @@ public class CookAgent extends Agent {
 
     ArrayList<Cook> infoCook = CookersAll.getCookers();
 
+    @SneakyThrows
     @Override
     protected void setup() {
         System.out.println("Hello! Cook-agent " + getAID().getName() + " is ready.");
         ACLMessage msg = receive(); // spisok zakazov
         Integer cookID = null;
+
+        final DFAgentDescription dfAgentDescription = new DFAgentDescription();
+        final ServiceDescription serviceDescription = new ServiceDescription();
+
+        serviceDescription.setType(CookAgent.class.getName());
+        dfAgentDescription.addServices(serviceDescription);
+
+        DFService.register(this, dfAgentDescription);
+
         if (msg != null) {
             boolean isEquipmentFound = false;
             while(!isEquipmentFound) {

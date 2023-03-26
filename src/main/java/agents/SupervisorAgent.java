@@ -13,6 +13,8 @@ import jade.lang.acl.MessageTemplate;
 import jade.wrapper.AgentContainer;
 import jade.wrapper.AgentController;
 import jade.wrapper.ControllerException;
+import lombok.SneakyThrows;
+import util.AgentUtils;
 
 @JadeAgent
 public class SupervisorAgent extends Agent {
@@ -41,6 +43,7 @@ public class SupervisorAgent extends Agent {
     }
 
     public class CreateOrder extends OneShotBehaviour {
+        @SneakyThrows
         public void action() {
             container = getContainerController();
             MessageTemplate templateOrder = MessageTemplate.and(
@@ -71,10 +74,10 @@ public class SupervisorAgent extends Agent {
                 }
             } else {
                 block();
-                destroyAgent(getAID("menu"));
-                destroyAgent(getAID("equipment"));
-                destroyAgent(getAID("cook"));
-                destroyAgent(getAID("rabotyaga"));
+                AgentUtils.destroyAgentsByType(myAgent, "menu");
+                AgentUtils.destroyAgentsByType(myAgent, EquipAgent.class.getName());
+                AgentUtils.destroyAgentsByType(myAgent, CookAgent.class.getName());
+                AgentUtils.destroyAgentsByType(myAgent, "rabotyaga");
                 doDelete();
             }
         }
