@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="JsonSchemaMappingsProjectConfiguration">
+    <state>
+      <map>
+        <entry key="JSON Schema version 4">
+          <value>
+            <SchemaInfo>
+              <option name="name" value="JSON Schema version 4" />
+              <option name="relativePathToSchema" value="http://json-schema.org/draft-04/schema" />
+              <option name="applicationDefined" value="true" />
+              <option name="patterns">
+                <list>
+                  <Item>
+                    <option name="path" value="src/main/resources/dish_cards.json" />
+                  </Item>
+                  <Item>
+                    <option name="path" value="src/main/resources/products.json" />
+                  </Item>
+                  <Item>
+                    <option name="path" value="src/main/resources/cookers.json" />
+                  </Item>
+                  <Item>
+                    <option name="path" value="src/main/resources/equipment.json" />
+                  </Item>
+                  <Item>
+                    <option name="path" value="src/main/resources/menu_dishes.json" />
+                  </Item>
+                  <Item>
+                    <option name="path" value="src/main/resources/visitors_orders.json" />
+                  </Item>
+                </list>
+              </option>
+            </SchemaInfo>
+          </value>
+        </entry>
+      </map>
+    </state>
+  </component>
+</project>
