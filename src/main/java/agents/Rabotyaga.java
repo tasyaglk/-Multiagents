@@ -1,17 +1,18 @@
 package agents;
 
+import agents.models.*;
 import configuration.JadeAgent;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
-import model.*;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 import static java.lang.Integer.parseInt;
+import static java.lang.Thread.sleep;
 
 @JadeAgent
 public class Rabotyaga extends Agent {
@@ -21,9 +22,11 @@ public class Rabotyaga extends Agent {
         System.out.println("Hello! rabotyaga-agent " + getAID().getName() + " is ready.");
         MessageTemplate template = MessageTemplate.and(
                 MessageTemplate.MatchPerformative(ACLMessage.INFORM
-                ), MessageTemplate.MatchSender(new AID("menu", AID.ISLOCALNAME))
+                ), MessageTemplate.MatchSender(new AID("MenuAgent", AID.ISLOCALNAME))
         );
         ACLMessage message = receive(template);
+        System.out.println("raboytaga receives message : ");
+        System.out.println(message);
         if (message != null) {
             Integer dishCard = parseInt(message.getContent());
             int fl = 0;
@@ -47,7 +50,7 @@ public class Rabotyaga extends Agent {
                                 if (Objects.equals(prod.getProdItemType(), podd.getProdType())) {
                                     if (prod.getProdItemQuantity() < podd.getProdQuantity()) {
                                         ACLMessage checkEquipMsg = new ACLMessage((ACLMessage.INFORM));
-                                        checkEquipMsg.addReceiver(new AID("menu", AID.ISLOCALNAME));
+                                        checkEquipMsg.addReceiver(new AID("MenuAgent", AID.ISLOCALNAME));
                                         checkEquipMsg.setContent("NO");
                                         send(checkEquipMsg);
                                         fl = 1;
@@ -74,13 +77,13 @@ public class Rabotyaga extends Agent {
                             if(Objects.equals(eqmnt.getEquipType(), eq))
                             {
                                 ACLMessage checkEquipMsg = new ACLMessage((ACLMessage.REQUEST));
-                                checkEquipMsg.addReceiver(new AID("equipment", AID.ISLOCALNAME));
+                                checkEquipMsg.addReceiver(new AID("EquipAgent", AID.ISLOCALNAME));
                                 checkEquipMsg.setContent(eqmnt.getEquipType().toString());
                                 send(checkEquipMsg);
 
                                 MessageTemplate template2 = MessageTemplate.and(
                                         MessageTemplate.MatchPerformative(ACLMessage.INFORM
-                                        ), MessageTemplate.MatchSender(new AID("equipment", AID.ISLOCALNAME))
+                                        ), MessageTemplate.MatchSender(new AID("EquipAgent", AID.ISLOCALNAME))
                                 );
                                 ACLMessage ans = receive(template2); // equip type
 

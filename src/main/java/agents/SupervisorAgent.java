@@ -1,9 +1,11 @@
 package agents;
 
+import agents.models.Customer;
+import agents.models.Order;
 import configuration.JadeAgent;
 import jade.core.AID;
 import jade.core.Agent;
-import jade.core.behaviours.OneShotBehaviour;
+import jade.core.behaviours.CyclicBehaviour;
 import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
@@ -14,24 +16,33 @@ import jade.wrapper.AgentContainer;
 import jade.wrapper.AgentController;
 import jade.wrapper.ControllerException;
 import lombok.SneakyThrows;
+import service.CreateLogService;
 import util.AgentUtils;
+
+import java.util.ArrayList;
+
+import static java.lang.Thread.sleep;
 
 @JadeAgent
 public class SupervisorAgent extends Agent {
     private static AgentContainer container;
-    private AgentController orderAgent;
     public static final String AGENT_TYPE = "manager";
     public static final String AGENT_NAME = "Manager-agent";
 
     @Override
     protected void setup() {
-        System.out.println("Supervisor Agent " + getAID().getName() + " is ready.");
+//        try {
+//            wait(2000);
+//        } catch (InterruptedException e) {
+//            throw new RuntimeException(e);
+//        }
+        System.out.println("Supervisor Agent " + SupervisorAgent.class.getName() + " is ready.");
         DFAgentDescription agentDescription = new DFAgentDescription();
         agentDescription.setName(getAID());
 
         ServiceDescription serviceDescription = new ServiceDescription();
-        serviceDescription.setType(AGENT_TYPE);
-        serviceDescription.setName(AGENT_NAME);
+        serviceDescription.setType(CustomerAgent.class.getName());
+        serviceDescription.setName(CustomerAgent.class.getName());
         agentDescription.addServices(serviceDescription);
         try {
             DFService.register(this, agentDescription);
@@ -42,32 +53,57 @@ public class SupervisorAgent extends Agent {
         addBehaviour(new CreateOrder());
     }
 
-    public class CreateOrder extends OneShotBehaviour {
+    public class CreateOrder extends CyclicBehaviour {
         @SneakyThrows
         public void action() {
             container = getContainerController();
+            ACLMessage iD = new ACLMessage((ACLMessage.INFORM));
+            iD.addReceiver(new AID(CustomerAgent.class.getName(), AID.ISLOCALNAME));
+            iD.setContent("1");
+            send(iD);
+            System.out.println("Supervisor sends message : ");
+            System.out.println(iD);
+            CreateLogService.addLog("Supervisor sends message : " + iD);
             MessageTemplate templateOrder = MessageTemplate.and(
                     MessageTemplate.MatchPerformative(ACLMessage.INFORM
-                    ), MessageTemplate.MatchSender(new AID("customer", AID.ISLOCALNAME))
+                    ), MessageTemplate.MatchSender(new AID(CustomerAgent.class.getName(), AID.ISLOCALNAME))
             );
             ACLMessage msg = myAgent.receive(templateOrder); // spisok zakazov
+            System.out.println("Supervisor receives message : ");
+            System.out.println(msg);
+            CreateLogService.addLog("Supervisor receives message : " + msg);
+            while (msg == null) {
+                templateOrder = MessageTemplate.and(
+                        MessageTemplate.MatchPerformative(ACLMessage.INFORM
+                        ), MessageTemplate.MatchSender(new AID(CustomerAgent.class.getName(), AID.ISLOCALNAME))
+                );
+                msg = myAgent.receive(templateOrder); // spisok zakazov
+                System.out.println("Supervisor receives message if first message is null: ");
+                System.out.println(msg);
+                sleep(1000);
+            }
             if (msg != null) {
                 try {
+                    System.out.println((msg.getContent()));
+
                     String[] order = msg.getContent().split(" ");
                     for (String s : order) {
                         ACLMessage ansTime = new ACLMessage((ACLMessage.INFORM));
-                        ansTime.addReceiver(new AID("order", AID.ISLOCALNAME));
+                        ansTime.addReceiver(new AID("OrderAgent", AID.ISLOCALNAME));
                         ansTime.setContent(s);
                         send(ansTime);
+                        System.out.println("Supervisor sends message : ");
+                        System.out.println(ansTime);
 
                         MessageTemplate template = MessageTemplate.and(
                                 MessageTemplate.MatchPerformative(ACLMessage.INFORM
-                                ), MessageTemplate.MatchSender(new AID("order", AID.ISLOCALNAME))
+                                ), MessageTemplate.MatchSender(new AID("OrderAgent", AID.ISLOCALNAME))
                         );
                         ACLMessage message = receive(template);
-                        System.out.println(message.getContent());
+                        System.out.println("Supervisor receives message : ");
+                        System.out.println(message);
 
-                        destroyAgent(message.getSender());
+                        //destroyAgent(message.getSender());
                     }
                 } catch (Exception e) {
                     e.printStackTrace();

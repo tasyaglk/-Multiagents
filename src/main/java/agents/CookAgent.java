@@ -1,15 +1,16 @@
 package agents;
 
+import agents.models.Cook;
+import agents.models.CookersAll;
 import configuration.JadeAgent;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
+import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
-import lombok.SneakyThrows;
-import model.Cook;
-import model.CookersAll;
+import jade.lang.acl.MessageTemplate;
 
 import java.util.ArrayList;
 import java.util.Objects;
@@ -21,20 +22,29 @@ public class CookAgent extends Agent {
 
     ArrayList<Cook> infoCook = CookersAll.getCookers();
 
-    @SneakyThrows
     @Override
     protected void setup() {
-        System.out.println("Hello! Cook-agent " + getAID().getName() + " is ready.");
-        ACLMessage msg = receive(); // spisok zakazov
+        System.out.println("Hello! СЃook-agent " + getAID().getName() + " is ready.");
+        MessageTemplate template = MessageTemplate.and(
+                MessageTemplate.MatchPerformative(ACLMessage.REQUEST
+                ), MessageTemplate.MatchSender(new AID("EquipAgent1", AID.ISLOCALNAME))
+        );
+        ACLMessage msg = receive(template); // spisok zakazov
+        System.out.println("Cook receives message : ");
+        System.out.println(msg);
         Integer cookID = null;
 
         final DFAgentDescription dfAgentDescription = new DFAgentDescription();
         final ServiceDescription serviceDescription = new ServiceDescription();
-
-        serviceDescription.setType(CookAgent.class.getName());
+        serviceDescription.setName(CookAgent.class.getName());
+        serviceDescription.setType(CookAgent.class.getName()); // died tut
         dfAgentDescription.addServices(serviceDescription);
 
-        DFService.register(this, dfAgentDescription);
+        try {
+            DFService.register(this, dfAgentDescription);
+        } catch (FIPAException e) {
+            throw new RuntimeException(e);
+        }
 
         if (msg != null) {
             boolean isEquipmentFound = false;
@@ -61,6 +71,8 @@ public class CookAgent extends Agent {
             checkMenuMsg.addReceiver(receiverAID);
             checkMenuMsg.setContent(cookID.toString());
             send(checkMenuMsg);
+            System.out.println("Cook sends message : ");
+            System.out.println(checkMenuMsg);
         }
     }
 

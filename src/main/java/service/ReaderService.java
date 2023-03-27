@@ -1,8 +1,7 @@
 package service;
 
-import model.Stock;
+import agents.models.*;
 import com.google.gson.Gson;
-import model.*;
 
 import java.io.IOException;
 import java.nio.file.Files;

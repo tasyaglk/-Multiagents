@@ -1,5 +1,8 @@
 package agents;
 
+import agents.models.Equipment;
+import agents.models.EquipmentAll;
+import configuration.JadeAgent;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.domain.DFService;
@@ -7,12 +10,10 @@ import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
-import configuration.JadeAgent;
 import lombok.SneakyThrows;
-import model.Equipment;
-import model.EquipmentAll;
 
-import java.util.*;
+import java.util.List;
+import java.util.Objects;
 
 import static java.lang.Integer.parseInt;
 import static java.lang.Thread.sleep;
@@ -26,7 +27,7 @@ public class EquipAgent extends Agent {
 
         final DFAgentDescription dfAgentDescription = new DFAgentDescription();
         final ServiceDescription serviceDescription = new ServiceDescription();
-
+        serviceDescription.setName(CookAgent.class.getName());
         serviceDescription.setType(EquipAgent.class.getName());
         dfAgentDescription.addServices(serviceDescription);
 
@@ -37,6 +38,8 @@ public class EquipAgent extends Agent {
                 ), MessageTemplate.MatchSender(new AID("rabotyaga", AID.ISLOCALNAME))
         );
         ACLMessage msg = receive(template); // equip type
+        System.out.println("Equip receives message : ");
+        System.out.println(msg);
         if (msg != null) {
             Integer eqTp = parseInt(msg.getContent());
             List<Equipment> equipment = EquipmentAll.getEquipment();
@@ -52,28 +55,34 @@ public class EquipAgent extends Agent {
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }
-                    }
-                    eqmnt.changeEquipActivity();
-                    equipID = eqmnt.getEquipId();
-                    ACLMessage checkCookMsg = new ACLMessage((ACLMessage.REQUEST));
-                    checkCookMsg.addReceiver(new AID("cook", AID.ISLOCALNAME));
-                    checkCookMsg.setContent(eqmnt.getEquipType().toString());
-                    send(checkCookMsg);
-
-                    MessageTemplate template2 = MessageTemplate.and(
-                            MessageTemplate.MatchPerformative(ACLMessage.INFORM
-                            ), MessageTemplate.MatchSender(new AID("cook", AID.ISLOCALNAME))
-                    );
-                    ACLMessage message = receive(template2);
-
-                    eqmnt.changeEquipActivity();
-
-                    ACLMessage ansOrderMsg = new ACLMessage((ACLMessage.INFORM));
-                    ansOrderMsg.addReceiver(msg.getSender());
-                    // eqID + ' ' + idcook
-                    ansOrderMsg.setContent(equipID.toString() + ' ' + message.getContent());
-                    send(ansOrderMsg);
                 }
+                eqmnt.changeEquipActivity();
+                equipID = eqmnt.getEquipId();
+                ACLMessage checkCookMsg = new ACLMessage((ACLMessage.REQUEST));
+                checkCookMsg.addReceiver(new AID("CookAgent1", AID.ISLOCALNAME));
+                checkCookMsg.setContent(eqmnt.getEquipType().toString());
+                send(checkCookMsg);
+                System.out.println("Equip sends message : ");
+                System.out.println(checkCookMsg);
+
+                MessageTemplate template2 = MessageTemplate.and(
+                        MessageTemplate.MatchPerformative(ACLMessage.INFORM
+                        ), MessageTemplate.MatchSender(new AID("CookAgent1", AID.ISLOCALNAME))
+                );
+                ACLMessage message = receive(template2);
+                System.out.println("Equip receives message : ");
+                System.out.println(message);
+
+                eqmnt.changeEquipActivity();
+
+                ACLMessage ansOrderMsg = new ACLMessage((ACLMessage.INFORM));
+                ansOrderMsg.addReceiver(msg.getSender());
+                // eqID + ' ' + idcook
+                ansOrderMsg.setContent(equipID.toString() + ' ' + message.getContent());
+                send(ansOrderMsg);
+                System.out.println("Equip sends message : ");
+                System.out.println(ansOrderMsg);
             }
         }
+    }
 }

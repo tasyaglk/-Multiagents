@@ -1,4 +1,4 @@
-package model;
+package agents.models;
 
 import static java.util.Objects.isNull;
 

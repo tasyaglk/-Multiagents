@@ -1,4 +1,4 @@
-package model;
+package agents.models;
 
 public final class MessageStorage {
 

@@ -1,4 +1,4 @@
-package model;
+package agents.models;
 
 import java.util.ArrayList;
 import java.util.List;

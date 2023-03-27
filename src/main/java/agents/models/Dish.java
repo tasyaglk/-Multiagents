@@ -1,6 +1,4 @@
-package model;
-
-import model.Operations;
+package agents.models;
 
 import java.util.List;
 

@@ -29,6 +29,9 @@
                   <Item>
                     <option name="path" value="src/main/resources/visitors_orders.json" />
                   </Item>
+                  <Item>
+                    <option name="path" value="src/main/resources/logs.json" />
+                  </Item>
                 </list>
               </option>
             </SchemaInfo>
