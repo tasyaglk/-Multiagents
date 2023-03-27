@@ -1,7 +1,5 @@
 package agents;
 
-import agents.models.Customer;
-import agents.models.Order;
 import configuration.JadeAgent;
 import jade.core.AID;
 import jade.core.Agent;
@@ -13,13 +11,10 @@ import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.wrapper.AgentContainer;
-import jade.wrapper.AgentController;
 import jade.wrapper.ControllerException;
 import lombok.SneakyThrows;
 import service.CreateLogService;
 import util.AgentUtils;
-
-import java.util.ArrayList;
 
 import static java.lang.Thread.sleep;
 
