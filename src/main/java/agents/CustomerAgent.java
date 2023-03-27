@@ -34,7 +34,7 @@ public class CustomerAgent extends Agent {
             assert allorders != null;
             for (Integer dish_id : allorders) {
                 ACLMessage checkMenuMsg = new ACLMessage((ACLMessage.REQUEST));
-                checkMenuMsg.addReceiver(new AID("manager", AID.ISLOCALNAME));
+                checkMenuMsg.addReceiver(new AID("Manager", AID.ISLOCALNAME));
                 checkMenuMsg.setContent(String.valueOf(dish_id));
                 send(checkMenuMsg);
 
