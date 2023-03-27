@@ -8,16 +8,19 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 
-public class CreateLogService {
+public class CreateLogService implements CreateLog {
 
-    private static ArrayList<String> logs;
+    private ArrayList<String> logs;
 
     public CreateLogService() {}
 
-    public static void addLog(String s) {
+    @Override
+    public void addLog(String s) {
         logs.add(s + '\n');
     }
-    public static void putLog() throws IOException {
+
+    @Override
+    public void putLog() throws IOException {
         Path inFilePath = Path.of("src\\main\\resources\\logs.json");
         Gson gson = new GsonBuilder()
                 .setPrettyPrinting()

@@ -2,15 +2,18 @@ package agents;
 
 import agents.models.Cook;
 import agents.models.CookersAll;
+import behaviour.SendMessage;
 import configuration.JadeAgent;
 import jade.core.AID;
 import jade.core.Agent;
+import jade.core.behaviours.Behaviour;
+import jade.core.behaviours.TickerBehaviour;
 import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
-import jade.lang.acl.MessageTemplate;
+import service.CreateLogService;
 
 import java.util.ArrayList;
 import java.util.Objects;
@@ -19,19 +22,16 @@ import static java.lang.Thread.sleep;
 
 @JadeAgent(number = 3)
 public class CookAgent extends Agent {
-
+    AID[] receivers;
     ArrayList<Cook> infoCook = CookersAll.getCookers();
+
+    CreateLogService logService;
 
     @Override
     protected void setup() {
-        System.out.println("Hello! СЃook-agent " + getAID().getName() + " is ready.");
-        MessageTemplate template = MessageTemplate.and(
-                MessageTemplate.MatchPerformative(ACLMessage.REQUEST
-                ), MessageTemplate.MatchSender(new AID("EquipAgent1", AID.ISLOCALNAME))
-        );
-        ACLMessage msg = receive(template); // spisok zakazov
-        System.out.println("Cook receives message : ");
-        System.out.println(msg);
+        System.out.println("Hello! Cook-agent " + getAID().getName() + " is ready.");
+
+        final ACLMessage[] msg = new ACLMessage[1]; // spisok zakazov
         Integer cookID = null;
 
         final DFAgentDescription dfAgentDescription = new DFAgentDescription();
@@ -40,13 +40,26 @@ public class CookAgent extends Agent {
         serviceDescription.setType(CookAgent.class.getName()); // died tut
         dfAgentDescription.addServices(serviceDescription);
 
+        addBehaviour(new Behaviour() {
+            @Override
+            public void action() {
+                msg[0] = myAgent.receive();
+                //logService.addLog("CookAgent receives message :" + msg[0].getContent());
+            }
+
+            @Override
+            public boolean done() {
+                return false;
+            }
+        });
+
         try {
             DFService.register(this, dfAgentDescription);
         } catch (FIPAException e) {
             throw new RuntimeException(e);
         }
 
-        if (msg != null) {
+        if (msg[0] != null) {
             boolean isEquipmentFound = false;
             while(!isEquipmentFound) {
                 makeSleep(2000);
@@ -66,13 +79,30 @@ public class CookAgent extends Agent {
                     break;
                 }
             }
-            AID receiverAID = msg.getSender();
-            ACLMessage checkMenuMsg = new ACLMessage((ACLMessage.INFORM));
-            checkMenuMsg.addReceiver(receiverAID);
-            checkMenuMsg.setContent(cookID.toString());
-            send(checkMenuMsg);
-            System.out.println("Cook sends message : ");
-            System.out.println(checkMenuMsg);
+
+            Integer finalCookID = cookID;
+            addBehaviour(new TickerBehaviour(this, 10000) {
+                @Override
+                protected void onTick() {
+                    // Update the list of seller agents
+                    DFAgentDescription template = new DFAgentDescription();
+                    ServiceDescription sd = new ServiceDescription();
+                    sd.setType(EquipAgent.class.getName());
+                    template.addServices(sd);
+                    try {
+                        DFAgentDescription[] result = DFService.search(myAgent, template);
+                        receivers = new AID[result.length];
+                        for (int i = 0; i < result.length; ++i) {
+                            receivers[i] = result[i].getName();
+                        }
+                    } catch (FIPAException fe) {
+                        fe.printStackTrace();
+                    }
+                    myAgent.addBehaviour(new SendMessage(finalCookID.toString(), receivers));
+                    //logService.addLog("CookAgent receives message :" + finalCookID);
+                }
+            });
+
         }
     }
 

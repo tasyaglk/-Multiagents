@@ -2,6 +2,7 @@ package service;
 
 import agents.models.*;
 import com.google.gson.Gson;
+import lombok.SneakyThrows;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -9,8 +10,9 @@ import java.nio.file.Path;
 
 public class ReaderService implements Reader {
 
+    @SneakyThrows
     @Override
-    public void fillInAgents() throws IOException {
+    public void fillInAgents() {
         String ordersString = "src\\main\\resources\\visitors_orders.json";
         readJsonOrder(ordersString);
         String menuString = "src\\main\\resources\\menu_dishes.json";
@@ -31,7 +33,6 @@ public class ReaderService implements Reader {
         checkCorrectnessJson(json, MessageStorage.VISITOR_ORDERS_ERROR);
         Order orders = new Gson().fromJson(json, Order.class);
         orders.checkNullsInJson();
-        //orders.print();
     }
 
     @Override
@@ -40,7 +41,6 @@ public class ReaderService implements Reader {
         checkCorrectnessJson(json, MessageStorage.MENU_DISHES_ERROR);
         MenuDishes menu = new Gson().fromJson(json, MenuDishes.class);
         menu.checkNullsInJson();
-        //dishes.print();
     }
 
     @Override
@@ -49,7 +49,6 @@ public class ReaderService implements Reader {
         checkCorrectnessJson(json, MessageStorage.DISH_CARDS_ERROR);
         DishCards dishes = new Gson().fromJson(json, DishCards.class);
         dishes.checkNullsInJson();
-        //dishes.print();
     }
 
     @Override
@@ -58,7 +57,6 @@ public class ReaderService implements Reader {
         checkCorrectnessJson(json, MessageStorage.PRODUCTS_ERROR);
         Stock products = new Gson().fromJson(json, Stock.class);
         products.checkNullsInJson();
-        //products.print();
     }
 
     @Override
@@ -67,7 +65,6 @@ public class ReaderService implements Reader {
         checkCorrectnessJson(json, MessageStorage.EQUIPMENT_ERROR);
         EquipmentAll equipment = new Gson().fromJson(json, EquipmentAll.class);
         equipment.checkNullsInJson();
-        //equipment.print();
     }
 
     @Override
@@ -76,7 +73,6 @@ public class ReaderService implements Reader {
         checkCorrectnessJson(json, MessageStorage.COOKERS_ERROR);
         CookersAll cook = new Gson().fromJson(json, CookersAll.class);
         cook.checkNullsInJson();
-        //cook.print();
     }
 
     private void checkCorrectnessJson(String json, String message) {

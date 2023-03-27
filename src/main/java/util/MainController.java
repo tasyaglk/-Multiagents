@@ -9,6 +9,7 @@ import jade.wrapper.AgentController;
 import jade.wrapper.ContainerController;
 import jade.wrapper.StaleProxyException;
 import org.reflections.Reflections;
+import service.ReaderService;
 
 import java.text.MessageFormat;
 import java.util.Objects;
@@ -24,6 +25,8 @@ public class MainController {
         p.setParameter(Profile.MAIN_HOST, "localhost");
         p.setParameter(Profile.MAIN_PORT, "8080");
         p.setParameter(Profile.GUI, "true");
+        ReaderService readerService = new ReaderService();
+        readerService.fillInAgents();
 
         containerController = rt.createMainContainer(p);
     }

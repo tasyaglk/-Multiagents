@@ -2,14 +2,17 @@ package agents;
 
 import agents.models.Equipment;
 import agents.models.EquipmentAll;
+import behaviour.SendMessage;
 import configuration.JadeAgent;
 import jade.core.AID;
 import jade.core.Agent;
+import jade.core.behaviours.Behaviour;
+import jade.core.behaviours.TickerBehaviour;
 import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
+import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
-import jade.lang.acl.MessageTemplate;
 import lombok.SneakyThrows;
 
 import java.util.List;
@@ -20,6 +23,8 @@ import static java.lang.Thread.sleep;
 
 @JadeAgent(number = 2)
 public class EquipAgent extends Agent {
+    AID[] recievers;
+
     @SneakyThrows
     @Override
     protected void setup() {
@@ -32,21 +37,24 @@ public class EquipAgent extends Agent {
         dfAgentDescription.addServices(serviceDescription);
 
         DFService.register(this, dfAgentDescription);
+        final ACLMessage[] msg = {null};
+        addBehaviour(new Behaviour() {
+            @Override
+            public void action() {
+                msg[0] = myAgent.receive();
+            }
 
-        MessageTemplate template = MessageTemplate.and(
-                MessageTemplate.MatchPerformative(ACLMessage.REQUEST
-                ), MessageTemplate.MatchSender(new AID("rabotyaga", AID.ISLOCALNAME))
-        );
-        ACLMessage msg = receive(template); // equip type
-        System.out.println("Equip receives message : ");
-        System.out.println(msg);
-        if (msg != null) {
-            Integer eqTp = parseInt(msg.getContent());
+            @Override
+            public boolean done() {
+                return false;
+            }
+        });
+        if (msg[0] != null) {
+            Integer eqTp = parseInt(msg[0].getContent());
             List<Equipment> equipment = EquipmentAll.getEquipment();
             Integer equipID;
             for (Equipment eqmnt : equipment) {
-                if (Objects.equals(eqmnt.getEquipType(), eqTp))
-                {
+                if (Objects.equals(eqmnt.getEquipType(), eqTp)) {
                     boolean ready = eqmnt.getEquipActive();
                     while (!ready)
                         try {
@@ -58,30 +66,49 @@ public class EquipAgent extends Agent {
                 }
                 eqmnt.changeEquipActivity();
                 equipID = eqmnt.getEquipId();
-                ACLMessage checkCookMsg = new ACLMessage((ACLMessage.REQUEST));
-                checkCookMsg.addReceiver(new AID("CookAgent1", AID.ISLOCALNAME));
-                checkCookMsg.setContent(eqmnt.getEquipType().toString());
-                send(checkCookMsg);
-                System.out.println("Equip sends message : ");
-                System.out.println(checkCookMsg);
 
-                MessageTemplate template2 = MessageTemplate.and(
-                        MessageTemplate.MatchPerformative(ACLMessage.INFORM
-                        ), MessageTemplate.MatchSender(new AID("CookAgent1", AID.ISLOCALNAME))
-                );
-                ACLMessage message = receive(template2);
-                System.out.println("Equip receives message : ");
-                System.out.println(message);
+                addBehaviour(new TickerBehaviour(this, 10000) {
+                    @Override
+                    protected void onTick() {
+                        // Update the list of seller agents
+                        DFAgentDescription template = new DFAgentDescription();
+                        ServiceDescription sd = new ServiceDescription();
+                        sd.setType(CookAgent.class.getName());
+                        template.addServices(sd);
+                        try {
+                            DFAgentDescription[] result = DFService.search(myAgent, template);
+                            recievers = new AID[result.length];
+                            for (int i = 0; i < result.length; ++i) {
+                                recievers[i] = result[i].getName();
+                            }
+                        } catch (FIPAException fe) {
+                            fe.printStackTrace();
+                        }
+                        myAgent.addBehaviour(new SendMessage(eqmnt.getEquipType().toString(), recievers));
+                    }
+                });
+
+
+                final ACLMessage[] message = new ACLMessage[1];
+                addBehaviour(new Behaviour() {
+                    @Override
+                    public void action() {
+                        message[0] = myAgent.receive();
+                    }
+
+                    @Override
+                    public boolean done() {
+                        return false;
+                    }
+                });
 
                 eqmnt.changeEquipActivity();
 
                 ACLMessage ansOrderMsg = new ACLMessage((ACLMessage.INFORM));
-                ansOrderMsg.addReceiver(msg.getSender());
+                ansOrderMsg.addReceiver(msg[0].getSender());
                 // eqID + ' ' + idcook
-                ansOrderMsg.setContent(equipID.toString() + ' ' + message.getContent());
+                ansOrderMsg.setContent(equipID.toString() + ' ' + message[0].getContent());
                 send(ansOrderMsg);
-                System.out.println("Equip sends message : ");
-                System.out.println(ansOrderMsg);
             }
         }
     }

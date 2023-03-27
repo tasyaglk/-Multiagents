@@ -2,19 +2,26 @@ package agents;
 
 import agents.models.Customer;
 import agents.models.Order;
+import behaviour.SendMessage;
 import configuration.JadeAgent;
 import jade.core.AID;
 import jade.core.Agent;
-import jade.core.behaviours.CyclicBehaviour;
+import jade.core.behaviours.Behaviour;
+import jade.core.behaviours.TickerBehaviour;
+import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
+import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
-import jade.lang.acl.MessageTemplate;
+import service.CreateLogService;
 
 import java.util.ArrayList;
 
 @JadeAgent(number = 2)
 public class CustomerAgent extends Agent {
+
+    private AID[] testAgents;
+    CreateLogService logService;
 
     @Override
     protected void setup() {
@@ -25,60 +32,77 @@ public class CustomerAgent extends Agent {
         serviceDescription.setName(CustomerAgent.class.getName());
         serviceDescription.setType(CustomerAgent.class.getName()); // died tut
         dfAgentDescription.addServices(serviceDescription);
-        addBehaviour(new Answer());
+        final ACLMessage[] msg = new ACLMessage[1];
+        addBehaviour(new Behaviour() {
+            @Override
+            public void action() {
+                msg[0] = myAgent.receive();
+                if (msg[0] != null) {
+                    //logService.addLog("CustomerAgent receives message :" + msg[0].getContent());
+                }
+            }
 
-    }
+            @Override
+            public boolean done() {
+                return false;
+            }
+        });
+        int id;
+        if (msg[0] != null) {
+            id = Integer.parseInt(msg[0].getContent());
+            ArrayList<Integer> allOrders = null;
+            ArrayList<Customer> infoCustomer = Order.getVisitorsOrders();
+            int i = -1;
+            for (Customer oneCustomer : infoCustomer) {
+                i++;
+                if (i == id) {
+                    allOrders = oneCustomer.getVisOrdDishes();
+                }
+            }
 
-
-    public class Answer extends CyclicBehaviour {
-
-        @Override
-        public void action() {
-            //MessageTemplate messageTemplate = MessageTemplate.MatchPerformative(ACLMessage.CFP);
-            ACLMessage msg = myAgent.receive();
-
-//            MessageTemplate templateOrder = MessageTemplate.and(
-//                    MessageTemplate.MatchPerformative(ACLMessage.INFORM
-//                    ), MessageTemplate.MatchSender(new AID("agents.SupervisorAgent", AID.ISLOCALNAME))
-//            );
-//            ACLMessage msg = receive(templateOrder);
-            Integer id;
-            if (msg != null) {
-                id = Integer.valueOf(msg.getContent());
-                ArrayList<Integer> allorders = null;
-                ArrayList<Customer> infoCustomer = Order.getVisitorsOrders();
-                int i = -1;
-                for(Customer cust : infoCustomer) {
-                    i++;
-                    if(i == id) {
-                        allorders = cust.getVisOrdDishes();
+            assert allOrders != null;
+            for (Integer dish_id : allOrders) {
+                addBehaviour(new TickerBehaviour(this, 10000) {
+                    @Override
+                    protected void onTick() {
+                        // Update the list of seller agents
+                        DFAgentDescription template = new DFAgentDescription();
+                        ServiceDescription sd = new ServiceDescription();
+                        sd.setType(SupervisorAgent.class.getName());
+                        template.addServices(sd);
+                        try {
+                            DFAgentDescription[] result = DFService.search(myAgent, template);
+                            testAgents = new AID[result.length];
+                            for (int i = 0; i < result.length; ++i) {
+                                testAgents[i] = result[i].getName();
+                            }
+                        } catch (FIPAException fe) {
+                            fe.printStackTrace();
+                        }
+                        myAgent.addBehaviour(new SendMessage(String.valueOf(dish_id), testAgents));
+                        //logService.addLog("CustomerAgent receives message :" + dish_id);
                     }
-                }
+                });
 
-                assert allorders != null;
-                for (Integer dish_id : allorders) {
-                    ACLMessage checkMenuMsg = new ACLMessage((ACLMessage.REQUEST));
-                    checkMenuMsg.addReceiver(new AID("agents.SupervisorAgent", AID.ISLOCALNAME));
-                    checkMenuMsg.setContent(String.valueOf(dish_id));
-                    send(checkMenuMsg);
+                addBehaviour(new Behaviour() {
+                    @Override
+                    public void action() {
+                        ACLMessage message = myAgent.receive();
+                        if (message != null) {
+                            System.out.println("The dish will be served in" + message.getContent() + "minutes\n");
+                        }
+                    }
 
-                    MessageTemplate template = MessageTemplate.and(
-                            MessageTemplate.MatchPerformative(ACLMessage.INFORM
-                            ), MessageTemplate.MatchSender(new AID("SupervisorAgent", AID.ISLOCALNAME))
-                    );
-                    ACLMessage message = receive(template);
-                    System.out.println("The dish will be served in" + message + "minutes\n");
-                }
+                    @Override
+                    public boolean done() {
+                        return false;
+                    }
+                });
+
             }
         }
 
-//        protected void takeDown() {
-//            try {
-//                DFService.deregister(this);
-//            } catch (FIPAException fe) {
-//                fe.printStackTrace();
-//            }
-//            // Printout a dismissal message    System.out.println("Seller-agent " + getAID().getName() + " terminating.");
-//        }
     }
+
+
 }
